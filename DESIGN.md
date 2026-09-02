@@ -263,7 +263,7 @@ That means the answer-generation and citation-validation layers do not need to k
 - Unsupported/unreadable upload -> HTTP error; no partial indexing.
 - Zero chunks -> upload rejected.
 - Chroma unavailable -> health endpoint reports failure and API returns an error rather than hallucinating.
-- Gemini embedding failure -> request fails; no answer is generated.
+- Local embedding failure -> request fails; no answer is generated.
 - Weak retrieval -> refusal before LLM.
 - Gemini JSON parse/schema failure -> request fails closed.
 - Missing/invalid citation IDs -> refusal.

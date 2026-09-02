@@ -4,7 +4,7 @@ A small Retrieval-Augmented Generation (RAG) service for internal HR policy ques
 
 The prototype is intentionally backend-heavy and explainable:
 
-`Markdown policy -> heading-aware chunks -> Gemini embeddings -> Chroma Cloud -> vector retrieval -> retrieval safety gate -> Gemini grounded JSON -> server-side citation validation -> React UI`
+`Markdown policy -> heading-aware chunks -> local embeddings -> Chroma Cloud -> vector retrieval -> retrieval safety gate -> Gemini grounded JSON -> server-side citation validation -> React UI`
 
 ## Why this stack
 
@@ -162,14 +162,14 @@ See `.env.example`. The important model/configuration knobs are:
 - Google Gemini API overview and current JS SDK: https://ai.google.dev/gemini-api/docs
 - Gemini Interactions API: https://ai.google.dev/api/interactions-api-v1
 - Gemini structured output: https://ai.google.dev/gemini-api/docs/structured-output
-- Gemini embeddings: https://ai.google.dev/gemini-api/docs/embeddings
+- Local embeddings (@huggingface/transformers): https://huggingface.co/docs/transformers.js
 - Chroma Cloud clients: https://docs.trychroma.com/docs/run-chroma/clients
 - Chroma JS collection API: https://docs.trychroma.com/reference/js-collection
 
 ## PDF support
 
-PDF upload is handled in the same ingestion pipeline as Markdown/TXT. The server uses `pdf-parse` to extract text page-by-page, then sends each page through the existing chunker. Each indexed chunk keeps `page` metadata, so an answer can cite `document.pdf` + `Page N`. `pdf-parse` 2.4.5 supports Node.js 20.16+ and exposes per-page text through `result.pages`. citeturn130513search1turn364808search2
+PDF upload is handled in the same ingestion pipeline as Markdown/TXT. The server uses `pdf-parse` to extract text page-by-page, then sends each page through the existing chunker. Each indexed chunk keeps `page` metadata, so an answer can cite `document.pdf` + `Page N`. `pdf-parse` 2.4.5 supports Node.js 20.16+ and exposes per-page text through `result.pages`.
 
 This prototype supports **text-based PDFs**. A scanned/image-only PDF has no extractable text, so ingestion rejects it with a clear error. OCR is intentionally not included in the minimum implementation.
 
-The current PDF path does not claim perfect table extraction. PDFs whose tables are represented as selectable text may work, but layout-heavy tables can lose their row/column structure during text extraction. A stronger second iteration would use PDF table extraction and store table rows as structured chunks. `pdf-parse` also exposes a `getTable()` API that can be used for that upgrade. citeturn130513search1
+The current PDF path does not claim perfect table extraction. PDFs whose tables are represented as selectable text may work, but layout-heavy tables can lose their row/column structure during text extraction. A stronger second iteration would use PDF table extraction and store table rows as structured chunks. `pdf-parse` also exposes a `getTable()` API that can be used for that upgrade.
