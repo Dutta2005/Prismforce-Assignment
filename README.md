@@ -36,10 +36,11 @@ npm install
 
 ### 2. Configure environment variables
 
-Copy `.env.example` to `server/.env` and fill in the keys/IDs:
+Go to `server/` folder and copy `.env.example` to `.env` and fill in the keys/IDs:
 
 ```bash
-cp .env.example server/.env
+cd server
+cp .env.example .env
 ```
 
 Required values:
