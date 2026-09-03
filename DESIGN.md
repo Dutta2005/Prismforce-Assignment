@@ -29,9 +29,9 @@
               Local query embedding
                       |
               +-------v--------+
-              | Chroma vector  |
-              | similarity      |
-              | search, top-K   |
+              | Hybrid search  |
+              | (Vector + Kw)  |
+              | with RRF       |
               +-------+--------+
                       |
                distance threshold
@@ -60,7 +60,7 @@ The parser:
 
 1. Detects Markdown headings (`#` through `######`).
 2. Maintains the current heading path, for example `Health Benefits > Standard Health Tier > Dental Benefits`.
-3. Keeps Markdown tables together as atomic blocks whenever possible.
+3. Extracts Markdown tables, preserving context by representing each row alongside its respective column headers.
 4. Groups nearby paragraphs/list blocks from the same section until the configured character target is reached.
 5. Splits an unusually long block at a sensible line/sentence boundary with configurable overlap.
 
@@ -88,8 +88,8 @@ The chunk ID is a UUID and is also passed to Gemini during answering. This lets 
 At query time:
 
 1. Embed the employee question with the same local embedding model used at ingestion.
-2. Query Chroma using the explicit query vector.
-3. Retrieve the top `K` candidates (default 6).
+2. Perform a hybrid search against Chroma, querying for both the explicit query vector and keyword full-text matches.
+3. Fuse the vector and keyword results using Reciprocal Rank Fusion (RRF) and retrieve the top `K` candidates.
 4. Apply a distance threshold (default `1.45` in this prototype).
 5. Only the surviving chunks are eligible context for the answer model.
 
@@ -222,15 +222,18 @@ Why: confidence is another model assertion and can be miscalibrated. The first g
 
 Why: Chroma Cloud removes setup friction around persistence and gives a realistic hosted vector-store boundary while still keeping the data model simple. The same repository can later swap the Chroma client for another store behind `chroma.js`.
 
-## 6. Two-more-weeks plan
+## 6. Future Improvements
 
 I would harden the system in this order:
 
 1. **Evaluation harness first.** Add a small gold dataset with factual, table, paraphrase, ambiguous, and off-policy questions. Measure retrieval recall, citation correctness, answer correctness, and refusal precision. This protects against regressions when changing chunking or ranking.
-2. **Hybrid retrieval.** Add keyword/full-text retrieval beside vectors for exact policy identifiers, clause numbers, and names. Fuse the vector and lexical rankings (for example with reciprocal rank fusion) before the safety gate. Chroma Cloud already exposes full-text/search capabilities, so this is a natural extension.
-3. **Table-aware PDF ingestion.** The prototype now accepts text-based PDFs, but layout-heavy tables can still lose row/column structure. The next upgrade is to extract PDF tables as structured rows and preserve headers in the indexed representation.
-4. **Versioning and auth.** Add policy IDs, versions/effective dates, real authentication, and role enforcement in the server rather than the demo header.
-5. **Observability and feedback.** Store anonymized retrieval traces, refusal reasons, latency, and thumbs up/down feedback for evaluation.
+2. **Versioning and auth.** Add policy IDs, versions/effective dates, real authentication, and role enforcement in the server rather than the demo header.
+3. **Observability and feedback.** Store anonymized retrieval traces, refusal reasons, latency, and thumbs up/down feedback for evaluation.
+
+### Recently Implemented Extensions
+
+- **Hybrid retrieval:** Keyword/full-text retrieval was added alongside vector search to handle exact policy identifiers, clause numbers, and names. The vector and lexical rankings are fused using reciprocal rank fusion (RRF) before the safety gate.
+- **Table-aware Ingestion:** The chunker explicitly parses tables to represent each individual data row with its column headers inline, ensuring relational structure is heavily preserved for retrieval without compromising standard chunk logic.
 
 ## PDF ingestion
 
@@ -244,7 +247,7 @@ For PDF citations, `section` becomes `Page N` because arbitrary PDF text does no
 
 ## 7. Stretch direction deliberately left as an extension point
 
-The retrieval boundary is isolated in `server/src/lib/rag.js` and `server/src/lib/chroma.js`. A future `hybridSearch()` implementation can return the same candidate shape:
+The retrieval boundary is isolated in `server/src/lib/rag.js` and `server/src/lib/chroma.js`. The `hybridSearch()` implementation returns the same candidate shape:
 
 ```js
 {

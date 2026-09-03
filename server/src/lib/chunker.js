@@ -14,6 +14,42 @@ function isTableLine(line) {
     return /^\s*\|.*\|\s*$/.test(line);
 }
 
+function transformTable(tableLines) {
+    const lines = tableLines.filter(line => isTableLine(line));
+    if (lines.length < 3) return tableLines.join('\n').trim();
+
+    const parseRow = (line) => {
+        return line
+            .trim()
+            .replace(/^\||\|$/g, '')
+            .split('|')
+            .map(cell => cell.trim());
+    };
+
+    const headers = parseRow(lines[0]);
+    const separator = parseRow(lines[1]);
+
+    const isSeparator = separator.every(cell => /^[-: ]+$/.test(cell));
+    if (!isSeparator) return tableLines.join('\n').trim();
+
+    const dataRows = [];
+    for (let i = 2; i < lines.length; i++) {
+        const cells = parseRow(lines[i]);
+        const rowStrings = [];
+        const maxCols = Math.max(headers.length, cells.length);
+        for (let j = 0; j < maxCols; j++) {
+            const header = headers[j] || `Column ${j + 1}`;
+            const cell = cells[j] || '';
+            if (cell !== '' || (headers[j] && headers[j] !== '')) {
+                rowStrings.push(`${header}: ${cell}`);
+            }
+        }
+        dataRows.push(rowStrings.join(' | '));
+    }
+
+    return dataRows.join('\n');
+}
+
 function normalizeMarkdown(raw) {
     return raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
 }
@@ -55,7 +91,7 @@ function parseBlocks(markdown) {
                 table.push(lines[i]);
                 i += 1;
             }
-            const text = table.join('\n').trim();
+            const text = transformTable(table);
             if (text) blocks.push({ text, section, sectionPath: [...sectionPath] });
             continue;
         }

@@ -4,7 +4,7 @@ A small Retrieval-Augmented Generation (RAG) service for internal HR policy ques
 
 The prototype is intentionally backend-heavy and explainable:
 
-`Markdown policy -> heading-aware chunks -> local embeddings -> Chroma Cloud -> vector retrieval -> retrieval safety gate -> Gemini grounded JSON -> server-side citation validation -> React UI`
+`Markdown policy -> heading-aware chunks -> local embeddings -> Chroma Cloud -> hybrid vector + keyword retrieval -> retrieval safety gate -> Gemini grounded JSON -> server-side citation validation -> React UI`
 
 ## Why this stack
 
@@ -172,4 +172,4 @@ PDF upload is handled in the same ingestion pipeline as Markdown/TXT. The server
 
 This prototype supports **text-based PDFs**. A scanned/image-only PDF has no extractable text, so ingestion rejects it with a clear error. OCR is intentionally not included in the minimum implementation.
 
-The current PDF path does not claim perfect table extraction. PDFs whose tables are represented as selectable text may work, but layout-heavy tables can lose their row/column structure during text extraction. A stronger second iteration would use PDF table extraction and store table rows as structured chunks. `pdf-parse` also exposes a `getTable()` API that can be used for that upgrade.
+To optimize RAG for tables, the chunker explicitly recognizes markdown tables (often produced by text extraction). It flattens them by representing each row dynamically alongside its column headers (e.g., `Header 1: Value 1 | Header 2: Value 2`). This keeps tabular relationships strongly intact for the LLM without requiring complex multi-modal parsing.
