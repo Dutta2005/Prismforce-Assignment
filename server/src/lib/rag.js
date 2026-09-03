@@ -1,6 +1,6 @@
 import { generateGroundedAnswer } from './gemini.js';
 import { embedMany, embedText } from './local-embedder.js';
-import { addChunks, deleteDocument, searchChunks } from './chroma.js';
+import { addChunks, deleteDocument, searchChunks, keywordSearch } from './chroma.js';
 import { env } from '../config/env.js';
 import { chunkMarkdown } from './chunker.js';
 import { parsePdf } from './document-parser.js';
@@ -58,7 +58,7 @@ export async function answerQuestion(question) {
     }
 
     const queryEmbedding = await embedText(normalizedQuestion);
-    const candidates = await searchChunks(queryEmbedding, env.topK);
+    const candidates = await hybridSearch(normalizedQuestion, queryEmbedding);
 
     // Chroma distances are only meaningful within the same collection/embedding setup.
     // The threshold is a safety gate: weak retrieval never reaches the LLM.
@@ -132,4 +132,37 @@ function toRetrievalDebug(item) {
         section: item.metadata.section,
         distance: Number(item.distance.toFixed(4)),
     };
+}
+
+async function hybridSearch(query, queryEmbedding) {
+    const vectorResults = await searchChunks(queryEmbedding, env.topK);
+    const keywordResults = await keywordSearch(query, env.topK);
+
+    return fuseResults(vectorResults, keywordResults);
+}
+
+function fuseResults(vectorResults, keywordResults) {
+    const rrfK = 60;
+    const scores = new Map();
+    const items = new Map();
+
+    const scoreResults = (results) => {
+        results.forEach((item, index) => {
+            const rank = index + 1;
+            const score = 1 / (rrfK + rank);
+            scores.set(item.id, (scores.get(item.id) || 0) + score);
+            
+            if (!items.has(item.id) || item.distance < items.get(item.id).distance) {
+                items.set(item.id, item);
+            }
+        });
+    };
+
+    scoreResults(vectorResults);
+    scoreResults(keywordResults);
+
+    // Sort by combined RRF score descending
+    return Array.from(scores.entries())
+        .sort((a, b) => b[1] - a[1])
+        .map(([id]) => items.get(id));
 }

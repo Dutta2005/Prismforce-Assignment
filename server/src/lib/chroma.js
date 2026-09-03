@@ -85,3 +85,43 @@ export async function countChunks() {
     const collection = await getCollection();
     return collection.count();
 }
+
+export async function keywordSearch(query, nResults = env.topK) {
+    const collection = await getCollection();
+
+    const words = query.trim().split(/\s+/).filter(w => w.length > 2);
+
+    if (words.length === 0) {
+        if (query.trim().length > 0) {
+            words.push(query.trim());
+        } else {
+            return [];
+        }
+    }
+
+    const whereDocument = words.length === 1
+        ? { "$contains": words[0] }
+        : { "$and": words.map(w => ({ "$contains": w })) };
+
+    try {
+        const result = await collection.get({
+            whereDocument,
+            limit: nResults,
+            include: ['documents', 'metadatas']
+        });
+
+        const ids = result.ids || [];
+        const documents = result.documents || [];
+        const metadatas = result.metadatas || [];
+
+        return ids.map((id, index) => ({
+            id,
+            document: documents[index] || '',
+            metadata: metadatas[index] || {},
+            distance: 0,
+        }));
+    } catch (error) {
+        console.error("Keyword search error:", error);
+        return [];
+    }
+}
