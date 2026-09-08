@@ -35,8 +35,10 @@ app.use((error, _req, res, _next) => {
     });
 });
 
-app.listen(env.port, () => {
-    console.log(`HR Policy RAG API running at http://localhost:${env.port}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(env.port, () => {
+        console.log(`HR Policy RAG API running at http://localhost:${env.port}`);
+    });
+}
 
 export default app;

@@ -1,5 +1,7 @@
-import { pipeline } from "@huggingface/transformers";
+import { pipeline, env as transformersEnv } from "@huggingface/transformers";
 import { env } from "../config/env.js";
+
+transformersEnv.cacheDir = '/tmp/.cache';
 
 let extractor = null;
 
