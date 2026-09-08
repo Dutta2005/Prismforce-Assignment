@@ -1,9 +1,9 @@
 import express from 'express';
 import cors from 'cors';
-import { env } from './config/env.js';
-import policiesRouter from './routes/policies.js';
-import qaRouter from './routes/qa.js';
-import { countChunks } from './lib/chroma.js';
+import { env } from '../src/config/env.js';
+import policiesRouter from '../src/routes/policies.js';
+import qaRouter from '../src/routes/qa.js';
+import { countChunks } from '../src/lib/chroma.js';
 
 const app = express();
 app.use(cors({ origin: env.clientOrigin }));
@@ -38,3 +38,5 @@ app.use((error, _req, res, _next) => {
 app.listen(env.port, () => {
     console.log(`HR Policy RAG API running at http://localhost:${env.port}`);
 });
+
+export default app;
