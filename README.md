@@ -84,6 +84,31 @@ Open the Vite URL (normally `http://localhost:5173`).
 5. The first two should return grounded answers with citations. The third should refuse.
 6. For the PDF path, upload `data/policies/health-benefits-sample.pdf` as Admin and ask the dental-implant question. The citation should include the PDF filename and page number.
 
+### Suggested Prompts for Newcomers
+
+Here are sample questions categorized by scenario to help newcomers quickly test and understand how the grounded RAG assistant responds:
+
+#### 1. Factual Policy Enquiries (Grounded Answers)
+
+- **Leave Policy:**
+  - `show me leave policies`
+  - `How many privilege leave days can I carry forward?`
+  - `Is sick leave encashable at year end?`
+- **Health & Benefits Policy:**
+  - `Does the Standard health tier cover dental implants?`
+  - `What is the maternity leave duration under full pay?`
+
+#### 2. Table / Specific Details Lookups
+
+- `What are the rules regarding privilege leave carry-forward vs encashment?`
+- `Which expenses are covered under outpatient medical care?`
+
+#### 3. Off-Policy / Out-of-Scope Prompts (Safety Refusals)
+
+- `Can I expense a personal home gym?`
+- `What is the company stock option vesting schedule?`
+- `Who is the CEO of the company?`
+
 ## API
 
 ### `POST /api/policies/upload`

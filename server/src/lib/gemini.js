@@ -65,7 +65,7 @@ export async function generateGroundedAnswer({ question, contexts }) {
                 responseMimeType: 'application/json',
                 responseSchema: answerSchema,
                 temperature: 0,
-                maxOutputTokens: 220,
+                maxOutputTokens: 1024,
             },
         });
     } catch (error) {
