@@ -65,7 +65,7 @@ export async function generateGroundedAnswer({ question, contexts }) {
                 responseMimeType: 'application/json',
                 responseSchema: answerSchema,
                 temperature: 0,
-                maxOutputTokens: 1024,
+                maxOutputTokens: 4096,
             },
         });
     } catch (error) {
@@ -74,6 +74,13 @@ export async function generateGroundedAnswer({ question, contexts }) {
             quotaError.code = 'GEMINI_RATE_LIMIT';
             quotaError.cause = error;
             throw quotaError;
+        }
+
+        if (error?.status === 400 && /maxOutputTokens exceeded/i.test(error?.message || '')) {
+            const maxOutputError = new Error('Gemini max output tokens exceeded. Try a simpler question or provide more specific context.');
+            maxOutputError.code = 'GEMINI_MAX_OUTPUT_EXCEEDED';
+            maxOutputError.cause = error;
+            throw maxOutputError;
         }
         throw error;
     }
